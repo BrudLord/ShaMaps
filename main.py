@@ -45,6 +45,7 @@ class Button:
         self.y = y
 
     def draw(self):
+        global is_map_point
         x = self.x
         y = self.y
         mouse = pygame.mouse.get_pos()
@@ -61,11 +62,17 @@ class Button:
                     map_vid = 'sat'
                 if self.name == 'Гибрид':
                     map_vid = 'sat,skl'
+                if self.name == 'Сборс':
+                    is_map_point = False
+                    print(is_map_point)
                 if self.name == 'F':
                     global base_cord
+                    global map_point
                     bc = base_cord[:]
                     try:
                         base_cord = [float(i) for i in find_coords(ib.text).split()]
+                        is_map_point = True
+                        map_point = base_cord.copy()
                     except Exception:
                         base_cord = bc
         else:
@@ -91,11 +98,19 @@ base_cord_change = 0.0005 # cord change = scale_modifier * base_cord_change
 map_vid = 'map'
 ib = InputBox()
 
+map_point = [37.530887, 55.703118]
+is_map_point = False
 
 def do_map_request(cord, map_scale):
+    global is_map_point
+    global map_point
     map_scale = str(map_scale) + ',' + str(map_scale)
     cord = ','.join(list(map(lambda x: str(x), cord)))
+    point_cord = ','.join(list(map(lambda x: str(x), map_point)))
     map_request = str("http://static-maps.yandex.ru/1.x/?ll=" + cord + "&spn=" + map_scale + "&l=" + map_vid)
+    if is_map_point:
+        print(1)
+        map_request += "&pt=" + point_cord + ",pm2rdm"
     response = requests.get(map_request)
     if not response:
         print("Ошибка выполнения запроса:")
@@ -134,13 +149,18 @@ def find_coords(txt):
 
 # Инициализируем pygame
 buttons = [Button(35, 35, 10, 10, 'Схема'), Button(35, 35, 55, 10, 'Спутник'), Button(35, 35, 100, 10, 'Гибрид'),
-           Button(15, 35, 120, 50, 'F')]
+           Button(15, 35, 120, 50, 'F'), Button(35, 35, 560, 410, 'Сборс')]
 pygame.init()
 screen = pygame.display.set_mode((600, 450))
 clock = pygame.time.Clock()
 running = True
 screen.blit(pygame.image.load(do_map_request(base_cord, base_scale * scale_modifier)), (0, 0))
 while running:
+    screen.blit(pygame.image.load(do_map_request(base_cord, base_scale * scale_modifier)), (0, 0))
+    for i in buttons:
+        i.draw()
+    ib.draw()
+    pygame.display.flip()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             os.remove("map.png")
@@ -162,9 +182,10 @@ while running:
                 base_cord[0] += scale_modifier * base_cord_change
             elif event.key == pygame.K_LEFT and base_cord[0] > -150:
                 base_cord[0] -= scale_modifier * base_cord_change
-        screen.blit(pygame.image.load(do_map_request(base_cord, base_scale * scale_modifier)), (0, 0))
-    for i in buttons:
-        i.draw()
-    ib.draw()
-    pygame.display.flip()
+            screen.blit(pygame.image.load(do_map_request(base_cord, base_scale * scale_modifier)), (0, 0))
+            for i in buttons:
+                i.draw()
+            ib.draw()
+            pygame.display.flip()
+        clock.tick(30)
 pygame.quit()
