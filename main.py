@@ -26,11 +26,11 @@ class InputBox:
                     self.text += ' '
                 elif len(pygame.key.name(k)) == 1:
                     if pygame.key.name(k) in '''`qwerttyuiop[]asdfghjkl;'zxcvbnm,./''':
-                        j = 'ёйцукенгшщзхъфывапролджэячсмитьбю.'['''`qwertyuiop[]asdfghjkl;'zxcvbnm,./'''.index(pygame.key.name(k))]
+                        j = 'ёйцукенгшщзхъфывапролджэячсмитьбю.'[
+                            '''`qwertyuiop[]asdfghjkl;'zxcvbnm,./'''.index(pygame.key.name(k))]
                         self.text += j
                     elif pygame.key.name(k).isdigit():
                         self.text += pygame.key.name(k)
-
 
     def draw(self):
         pygame.draw.rect(screen, pygame.Color(150, 150, 150), (self.x, self.y, self.w, self.h))
@@ -52,7 +52,7 @@ class Button:
     def draw(self):
         global base_cord
         global map_point
-        global is_map_point
+        global is_map_point, is_pochta
         x = self.x
         y = self.y
         mouse = pygame.mouse.get_pos()
@@ -69,6 +69,10 @@ class Button:
                     map_vid = 'sat'
                 if self.name == 'Гибрид':
                     map_vid = 'sat,skl'
+                if self.name == 'Почта':
+                    is_pochta = not is_pochta
+                    buttons[-1].draw()
+                    pygame.display.flip()
                 if self.name == 'Сборс':
                     is_map_point = False
                     buttons[-1].txt = ''
@@ -108,7 +112,10 @@ class Pole:
         y = self.y
         pygame.draw.rect(screen, self.active_color, (x, y, self.width, self.height))
         try:
-            print_text(self.txt, x, y, self.width, self.height)
+            if is_pochta and str(find_pochta(ib.text)).isdigit():
+                print_text(self.txt + str(find_pochta(ib.text)), x, y, self.width, self.height)
+            else:
+                print_text(self.txt, x, y, self.width, self.height)
         except Exception:
             pass
 
@@ -121,15 +128,16 @@ def print_text(message, x, y, button_width, button_height, font_color=(0, 0, 0),
 
 
 base_scale = 0.001
-scale_modifier = 1 # scale = base_scale * scale_modifier
-scale_change_modifier = 2 # How changes scale_modifier durning work of program
+scale_modifier = 1  # scale = base_scale * scale_modifier
+scale_change_modifier = 2  # How changes scale_modifier durning work of program
 base_cord = [37.530887, 55.703118]
-base_cord_change = 0.0005 # cord change = scale_modifier * base_cord_change
+base_cord_change = 0.0005  # cord change = scale_modifier * base_cord_change
 map_vid = 'map'
 ib = InputBox()
 
 map_point = [37.530887, 55.703118]
 is_map_point = False
+
 
 def do_map_request(cord, map_scale):
     global is_map_point
@@ -171,13 +179,9 @@ def find_coords(txt):
 
     # Преобразуем ответ в json-объект
     json_response = response.json()
-    print(json_response)
     # Получаем первый топоним из ответа геокодера.
     toponym = json_response["response"]["GeoObjectCollection"][
         "featureMember"][0]["GeoObject"]
-    adress = json_response["response"]["GeoObjectCollection"][
-        "featureMember"][0]["GeoObject"]['metaDataProperty']['GeocoderMetaData']['text']
-    print(adress)
     return toponym["Point"]["pos"]
 
 
@@ -203,13 +207,37 @@ def find_address(txt):
     return adress
 
 
+def find_pochta(txt):
+    toponym_to_find = txt
+    geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
+
+    geocoder_params = {
+        "apikey": "40d1649f-0493-4b70-98ba-98533de7710b",
+        "geocode": toponym_to_find,
+        "format": "json"}
+
+    response = requests.get(geocoder_api_server, params=geocoder_params)
+
+    if not response:
+        # обработка ошибочной ситуации
+        pass
+
+    # Преобразуем ответ в json-объект
+    json_response = response.json()
+    toponym = json_response["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]["metaDataProperty"][
+        "GeocoderMetaData"]["Address"]["postal_code"]
+    return toponym
+
+
 # Инициализируем pygame
 buttons = [Button(35, 35, 10, 10, 'Схема'), Button(35, 35, 55, 10, 'Спутн'), Button(35, 35, 100, 10, 'Гибрид'),
-           Button(15, 35, 120, 50, 'F'), Button(35, 35, 560, 410, 'Сборс'), Pole(450, 35, 145, 10, 'Address')]
+           Button(15, 35, 120, 50, 'F'), Button(35, 35, 560, 410, 'Сборс'), Button(35, 35, 560, 365, 'Почта'),
+           Pole(450, 35, 145, 10, 'Address')]
 pygame.init()
 screen = pygame.display.set_mode((600, 450))
 clock = pygame.time.Clock()
 running = True
+is_pochta = False
 screen.blit(pygame.image.load(do_map_request(base_cord, base_scale * scale_modifier)), (0, 0))
 while running:
     for event in pygame.event.get():
