@@ -25,7 +25,9 @@ class InputBox:
                 if pygame.key.name(k) == 'space':
                     self.text += ' '
                 elif len(pygame.key.name(k)) == 1:
-                    self.text += pygame.key.name(k)
+                    if pygame.key.name(k) in '''`qwerttyuiop[]asdfghjkl;'zxcvbnm,./''':
+                        j = 'ёйцукенгшщзхъфывапролджэячсмитьбю.'['''`qwertyuiop[]asdfghjkl;'zxcvbnm,./'''.index(pygame.key.name(k))]
+                        self.text += j
 
     def draw(self):
         pygame.draw.rect(screen, pygame.Color(150, 150, 150), (self.x, self.y, self.w, self.h))
@@ -73,6 +75,8 @@ class Button:
                         base_cord = [float(i) for i in find_coords(ib.text).split()]
                         is_map_point = True
                         map_point = base_cord.copy()
+                        screen.blit(pygame.image.load(do_map_request(base_cord, base_scale * scale_modifier)), (0, 0))
+                        pygame.display.flip()
                     except Exception:
                         base_cord = bc
         else:
@@ -84,7 +88,7 @@ class Button:
 
 
 def print_text(message, x, y, button_width, button_height, font_color=(0, 0, 0), font_type='Marta_Decor_Two.ttf',
-               font_size=13):
+               font_size=18):
     font_type = pygame.font.Font(font_type, font_size)
     text = font_type.render(message, True, font_color)
     screen.blit(text, (x + button_width // 2 - text.get_width() // 2, y + button_height // 2 - text.get_height() // 2))
@@ -148,7 +152,7 @@ def find_coords(txt):
 
 
 # Инициализируем pygame
-buttons = [Button(35, 35, 10, 10, 'Схема'), Button(35, 35, 55, 10, 'Спутник'), Button(35, 35, 100, 10, 'Гибрид'),
+buttons = [Button(35, 35, 10, 10, 'Схема'), Button(35, 35, 55, 10, 'Спутн'), Button(35, 35, 100, 10, 'Гибрид'),
            Button(15, 35, 120, 50, 'F'), Button(35, 35, 560, 410, 'Сборс')]
 pygame.init()
 screen = pygame.display.set_mode((600, 450))
@@ -165,7 +169,7 @@ while running:
             ib.handle_event(event.key)
             # scale events
             if event.key == pygame.K_PAGEUP and scale_modifier > 1:
-                scale_modifier *= (1 /scale_change_modifier)
+                scale_modifier *= (1 / scale_change_modifier)
             elif event.key == pygame.K_PAGEDOWN and scale_modifier < 8192:
                 scale_modifier *= scale_change_modifier
             # Moving events
