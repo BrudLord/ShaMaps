@@ -28,6 +28,9 @@ class InputBox:
                     if pygame.key.name(k) in '''`qwerttyuiop[]asdfghjkl;'zxcvbnm,./''':
                         j = 'ёйцукенгшщзхъфывапролджэячсмитьбю.'['''`qwertyuiop[]asdfghjkl;'zxcvbnm,./'''.index(pygame.key.name(k))]
                         self.text += j
+                    elif pygame.key.name(k).isdigit():
+                        self.text += pygame.key.name(k)
+
 
     def draw(self):
         pygame.draw.rect(screen, pygame.Color(150, 150, 150), (self.x, self.y, self.w, self.h))
@@ -47,6 +50,8 @@ class Button:
         self.y = y
 
     def draw(self):
+        global base_cord
+        global map_point
         global is_map_point
         x = self.x
         y = self.y
@@ -66,15 +71,16 @@ class Button:
                     map_vid = 'sat,skl'
                 if self.name == 'Сборс':
                     is_map_point = False
-                    print(is_map_point)
+                    buttons[-1].txt = ''
+                    screen.blit(pygame.image.load(do_map_request(base_cord, base_scale * scale_modifier)), (0, 0))
+                    pygame.display.flip()
                 if self.name == 'F':
-                    global base_cord
-                    global map_point
                     bc = base_cord[:]
                     try:
                         base_cord = [float(i) for i in find_coords(ib.text).split()]
                         is_map_point = True
                         map_point = base_cord.copy()
+                        buttons[-1].txt = find_address(ib.text)
                         screen.blit(pygame.image.load(do_map_request(base_cord, base_scale * scale_modifier)), (0, 0))
                         pygame.display.flip()
                     except Exception:
@@ -85,6 +91,26 @@ class Button:
             print_text(self.name, x, y, self.width, self.height)
         else:
             print_text(self.name, x, y, self.width, self.height)
+
+
+class Pole:
+    def __init__(self, width, height, x, y, name):
+        self.width = width
+        self.height = height
+        self.inactive_color = (200, 200, 200)
+        self.active_color = self.inactive_color[:]
+        self.name = name
+        self.x = x
+        self.y = y
+
+    def draw(self):
+        x = self.x
+        y = self.y
+        pygame.draw.rect(screen, self.active_color, (x, y, self.width, self.height))
+        try:
+            print_text(self.txt, x, y, self.width, self.height)
+        except Exception:
+            pass
 
 
 def print_text(message, x, y, button_width, button_height, font_color=(0, 0, 0), font_type='Marta_Decor_Two.ttf',
@@ -145,15 +171,41 @@ def find_coords(txt):
 
     # Преобразуем ответ в json-объект
     json_response = response.json()
+    print(json_response)
     # Получаем первый топоним из ответа геокодера.
     toponym = json_response["response"]["GeoObjectCollection"][
         "featureMember"][0]["GeoObject"]
+    adress = json_response["response"]["GeoObjectCollection"][
+        "featureMember"][0]["GeoObject"]['metaDataProperty']['GeocoderMetaData']['text']
+    print(adress)
     return toponym["Point"]["pos"]
+
+
+def find_address(txt):
+    toponym_to_find = txt
+    geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
+
+    geocoder_params = {
+        "apikey": "40d1649f-0493-4b70-98ba-98533de7710b",
+        "geocode": toponym_to_find,
+        "format": "json"}
+
+    response = requests.get(geocoder_api_server, params=geocoder_params)
+
+    if not response:
+        # обработка ошибочной ситуации
+        pass
+
+    # Преобразуем ответ в json-объект
+    json_response = response.json()
+    adress = json_response["response"]["GeoObjectCollection"][
+        "featureMember"][0]["GeoObject"]['metaDataProperty']['GeocoderMetaData']['text']
+    return adress
 
 
 # Инициализируем pygame
 buttons = [Button(35, 35, 10, 10, 'Схема'), Button(35, 35, 55, 10, 'Спутн'), Button(35, 35, 100, 10, 'Гибрид'),
-           Button(15, 35, 120, 50, 'F'), Button(35, 35, 560, 410, 'Сборс')]
+           Button(15, 35, 120, 50, 'F'), Button(35, 35, 560, 410, 'Сборс'), Pole(450, 35, 145, 10, 'Address')]
 pygame.init()
 screen = pygame.display.set_mode((600, 450))
 clock = pygame.time.Clock()
