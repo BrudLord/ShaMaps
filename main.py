@@ -109,7 +109,7 @@ def do_map_request(cord, map_scale):
     point_cord = ','.join(list(map(lambda x: str(x), map_point)))
     map_request = str("http://static-maps.yandex.ru/1.x/?ll=" + cord + "&spn=" + map_scale + "&l=" + map_vid)
     if is_map_point:
-        print(1)
+        print(23)
         map_request += "&pt=" + point_cord + ",pm2rdm"
     response = requests.get(map_request)
     if not response:
@@ -156,11 +156,6 @@ clock = pygame.time.Clock()
 running = True
 screen.blit(pygame.image.load(do_map_request(base_cord, base_scale * scale_modifier)), (0, 0))
 while running:
-    screen.blit(pygame.image.load(do_map_request(base_cord, base_scale * scale_modifier)), (0, 0))
-    for i in buttons:
-        i.draw()
-    ib.draw()
-    pygame.display.flip()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             os.remove("map.png")
@@ -187,5 +182,10 @@ while running:
                 i.draw()
             ib.draw()
             pygame.display.flip()
-        clock.tick(30)
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            screen.blit(pygame.image.load(do_map_request(base_cord, base_scale * scale_modifier)), (0, 0))
+        for i in buttons:
+            i.draw()
+        ib.draw()
+        pygame.display.flip()
 pygame.quit()
