@@ -207,7 +207,7 @@ def find_on_click(pos):
         except Exception:
             pass
     text_from_click = out
-    print(text_from_click) # Если что, text_from_click - глобальная переменная, ее выводить и надо.
+    buttons[-1].txt = text_from_click
 
 
 ########################################################################
@@ -343,6 +343,10 @@ is_pochta = False
 screen.blit(pygame.image.load(do_map_request(base_cord, base_scale * scale_modifier)), (0, 0))
 while running:
     for event in pygame.event.get():
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if is_find_oc:
+                find_on_click(event.pos)
+            screen.blit(pygame.image.load(do_map_request(base_cord, base_scale * scale_modifier)), (0, 0))
         if event.type == pygame.QUIT:
             os.remove("map.png")
             pygame.quit()
@@ -379,9 +383,5 @@ while running:
         for i in buttons:
             i.draw()
         ib.draw()
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if is_find_oc:
-                find_on_click(event.pos)
-            screen.blit(pygame.image.load(do_map_request(base_cord, base_scale * scale_modifier)), (0, 0))
         pygame.display.flip()
 pygame.quit()
